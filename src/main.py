@@ -1,6 +1,7 @@
 import cv2
 from detection.object_detection import ObjectDetector
 from spatial.distance_direction import get_direction
+from audio.text_to_speech import speak
 
 camera = cv2.VideoCapture(0)
 detector = ObjectDetector()
@@ -11,14 +12,15 @@ while True:
         break
 
     frame_width = frame.shape[1]
-
     detections = detector.detect(frame)
 
     for obj in detections:
         direction = get_direction(obj["x_center"], frame_width)
-        print(f"{obj['label']} detected on the {direction}")
+        message = f"{obj['label']} detected on the {direction}"
+        print(message)
+        speak(message)
 
-    cv2.imshow("TalkLens - Spatial Awareness", frame)
+    cv2.imshow("TalkLens - Speaking Assistant", frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
