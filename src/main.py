@@ -1,7 +1,11 @@
 import cv2
+from detection.object_detection import ObjectDetector
 
-# open camera (0 = default laptop camera)
+# start camera
 camera = cv2.VideoCapture(0)
+
+# load AI detector
+detector = ObjectDetector()
 
 while True:
     success, frame = camera.read()
@@ -10,10 +14,15 @@ while True:
         print("Camera not working")
         break
 
-    # show the camera frame
-    cv2.imshow("TalkLens Camera", frame)
+    # AI detects objects
+    objects = detector.detect(frame)
 
-    # press 'q' to quit
+    # show detected objects in terminal
+    if objects:
+        print("Detected:", objects)
+
+    cv2.imshow("TalkLens - Object Detection", frame)
+
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
