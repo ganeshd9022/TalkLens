@@ -1,27 +1,24 @@
 import cv2
 from detection.object_detection import ObjectDetector
+from spatial.distance_direction import get_direction
 
-# start camera
 camera = cv2.VideoCapture(0)
-
-# load AI detector
 detector = ObjectDetector()
 
 while True:
     success, frame = camera.read()
-
     if not success:
-        print("Camera not working")
         break
 
-    # AI detects objects
-    objects = detector.detect(frame)
+    frame_width = frame.shape[1]
 
-    # show detected objects in terminal
-    if objects:
-        print("Detected:", objects)
+    detections = detector.detect(frame)
 
-    cv2.imshow("TalkLens - Object Detection", frame)
+    for obj in detections:
+        direction = get_direction(obj["x_center"], frame_width)
+        print(f"{obj['label']} detected on the {direction}")
+
+    cv2.imshow("TalkLens - Spatial Awareness", frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
