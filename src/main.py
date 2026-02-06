@@ -1,3 +1,4 @@
+from language.description_generator import generate_sentence
 import cv2
 from detection.object_detection import ObjectDetector
 from spatial.distance_direction import get_direction, get_distance
@@ -24,8 +25,8 @@ while True:
     for obj in detections:
         direction = get_direction(obj["x_center"], frame_width)
         distance = get_distance(obj["box_width"], frame_width)
-        message = f"{obj['label']} detected on the {direction}, {distance}"
-        latest_messages.append(message)
+        message = generate_sentence(obj["label"], direction, distance)
+
 
     cv2.imshow("TalkLens - Voice Controlled", frame)
 
