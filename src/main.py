@@ -8,6 +8,9 @@ from interface.voice_input import listen_once
 from ai.scene_reasoner import reason_about_scene
 from ai.llm_reasoner import polish_answer
 
+import time
+last_answer_time = 0
+ANSWER_COOLDOWN = 2  # seconds
 
 # ---------------------------------
 # PERFORMANCE CONFIG
@@ -105,6 +108,10 @@ while True:
     # PUSH-TO-TALK (SPACE)
     # ---------------------------------
     if key == ord(' '):
+        current_time = time.time()
+        if current_time - last_answer_time < ANSWER_COOLDOWN:
+            continue
+
         speak("Listening")
         question = listen_once()
 
@@ -112,11 +119,12 @@ while True:
             speak("I did not hear a question.")
         else:
             fact = reason_about_scene(cached_scene, question)
-            final_answer = polish_answer(fact)
+            answer = polish_answer(fact)
 
-            if memory.should_speak(final_answer):
-                print("🧠 Answer:", final_answer)
-                speak(final_answer)
+            if memory.should_speak(answer):
+                print("🧠 Answer:", answer)
+                speak(answer)
+                last_answer_time = current_time
 
     
     # ---------------------------------

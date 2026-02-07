@@ -1,33 +1,18 @@
 import subprocess
 
-MODEL_NAME = "phi3:mini"  # fast local model
+MODEL_NAME = "phi3:mini"
 
-def ask_llama(scene, question):
-    # Build compact scene description
-    if not scene:
-        scene_text = "No objects detected."
-    else:
-        scene_text = ""
-        for obj in scene:
-            scene_text += (
-                f"- {obj['label']} is {obj['distance']} on your {obj['direction']}.\n"
-            )
-
-    # STRICT answer-only prompt
+def polish_answer(fact_sentence):
     prompt = f"""
-You must answer ONLY the user's question.
-Do NOT introduce yourself.
-Do NOT mention AI, assistant, system, or model.
-Do NOT explain your reasoning.
-Do NOT add extra information.
+Rewrite the sentence below in simple, calm, natural language.
+Do NOT add information.
+Do NOT remove information.
+Do NOT mention AI or assistant.
 
-Scene:
-{scene_text}
+Sentence:
+{fact_sentence}
 
-Question:
-{question}
-
-Answer with ONE short, clear sentence.
+Return ONE short sentence only.
 """
 
     result = subprocess.run(
@@ -39,7 +24,7 @@ Answer with ONE short, clear sentence.
 
     answer = result.stdout.strip()
 
-    # Safety: trim to first sentence only
+    # Hard safety trim
     if "." in answer:
         answer = answer.split(".")[0] + "."
 
