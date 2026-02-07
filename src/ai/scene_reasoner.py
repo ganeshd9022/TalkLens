@@ -5,47 +5,37 @@ def reason_about_scene(scene, question):
         return "It is safe to move forward."
 
     dangerous_objects = ["car", "bus", "truck", "bike", "motorcycle"]
-    blocking_distance = ["near", "at a moderate distance"]
 
     # ---------------------------------
     # SAFETY & NAVIGATION
     # ---------------------------------
     if any(word in question for word in ["safe", "move", "walk", "go", "forward"]):
-        # Highest priority: vehicles
+        # 1. Vehicles (always critical)
         for obj in scene:
             if obj["label"] in dangerous_objects:
-                return (
-                    f"There is a {obj['label']} {obj['distance']} on your "
-                    f"{obj['direction']}. Please stop."
-                )
-
-        # Blocking obstacle in front
-        for obj in scene:
-            if obj["direction"] == "center" and obj["distance"] in blocking_distance:
-                # Decide safer side
-                left_blocked = any(
-                    o["direction"] == "left" and o["distance"] in blocking_distance
-                    for o in scene
-                )
-                right_blocked = any(
-                    o["direction"] == "right" and o["distance"] in blocking_distance
-                    for o in scene
-                )
-
-                if not left_blocked:
+                if obj["distance"] in ["very close", "near"]:
                     return (
-                        f"There is a {obj['label']} in front of you. "
-                        "Please step left."
-                    )
-                elif not right_blocked:
-                    return (
-                        f"There is a {obj['label']} in front of you. "
-                        "Please step right."
+                        f"A {obj['label']} is {obj['distance']} on your "
+                        f"{obj['direction']}. Please stop immediately."
                     )
                 else:
                     return (
-                        f"There is a {obj['label']} blocking your path. "
+                        f"A {obj['label']} is on your {obj['direction']}. "
+                        "Please be careful."
+                    )
+
+        # 2. Obstacle directly ahead
+        for obj in scene:
+            if obj["direction"] == "center":
+                if obj["distance"] == "very close":
+                    return (
+                        f"A {obj['label']} is very close in front of you. "
                         "Please stop."
+                    )
+                if obj["distance"] == "near":
+                    return (
+                        f"A {obj['label']} is in front of you. "
+                        "Please step left or right."
                     )
 
         return "It appears safe to move forward."
@@ -56,7 +46,9 @@ def reason_about_scene(scene, question):
     if "person" in question or "people" in question:
         for obj in scene:
             if obj["label"] == "person":
-                return f"There is a person {obj['distance']} on your {obj['direction']}."
+                return (
+                    f"A person is {obj['distance']} on your {obj['direction']}."
+                )
         return "I do not see any person nearby."
 
     # ---------------------------------
