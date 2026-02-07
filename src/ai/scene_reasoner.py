@@ -2,59 +2,71 @@ def reason_about_scene(scene, question):
     question = question.lower().strip()
 
     if not scene:
-        return "I do not see any obstacles in front of you."
+        return "It is safe to move forward."
 
-    # Priority definitions
     dangerous_objects = ["car", "bus", "truck", "bike", "motorcycle"]
     blocking_distance = ["near", "at a moderate distance"]
 
-    # ----------------------------
-    # SAFETY & MOVEMENT QUESTIONS
-    # ----------------------------
-    if any(word in question for word in ["safe", "danger", "move", "walk", "go"]):
-        # 1. Moving vehicles (highest priority)
+    # ---------------------------------
+    # SAFETY & NAVIGATION
+    # ---------------------------------
+    if any(word in question for word in ["safe", "move", "walk", "go", "forward"]):
+        # Highest priority: vehicles
         for obj in scene:
             if obj["label"] in dangerous_objects:
                 return (
                     f"There is a {obj['label']} {obj['distance']} on your "
-                    f"{obj['direction']}. Please stop and be careful."
+                    f"{obj['direction']}. Please stop."
                 )
 
-        # 2. Obstacle directly ahead
+        # Blocking obstacle in front
         for obj in scene:
             if obj["direction"] == "center" and obj["distance"] in blocking_distance:
-                return (
-                    f"There is a {obj['label']} in front of you. "
-                    "It may not be safe to move forward."
+                # Decide safer side
+                left_blocked = any(
+                    o["direction"] == "left" and o["distance"] in blocking_distance
+                    for o in scene
                 )
+                right_blocked = any(
+                    o["direction"] == "right" and o["distance"] in blocking_distance
+                    for o in scene
+                )
+
+                if not left_blocked:
+                    return (
+                        f"There is a {obj['label']} in front of you. "
+                        "Please step left."
+                    )
+                elif not right_blocked:
+                    return (
+                        f"There is a {obj['label']} in front of you. "
+                        "Please step right."
+                    )
+                else:
+                    return (
+                        f"There is a {obj['label']} blocking your path. "
+                        "Please stop."
+                    )
 
         return "It appears safe to move forward."
 
-    # ----------------------------
-    # PERSON-RELATED QUESTIONS
-    # ----------------------------
+    # ---------------------------------
+    # PERSON RELATED
+    # ---------------------------------
     if "person" in question or "people" in question:
         for obj in scene:
             if obj["label"] == "person":
                 return f"There is a person {obj['distance']} on your {obj['direction']}."
         return "I do not see any person nearby."
 
-    # ----------------------------
-    # WHAT IS AROUND / IN FRONT
-    # ----------------------------
-    if any(word in question for word in ["front", "around", "see", "what"]):
-        descriptions = []
-        for obj in scene:
-            descriptions.append(
-                f"a {obj['label']} {obj['distance']} on your {obj['direction']}"
-            )
+    # ---------------------------------
+    # WHAT IS AROUND
+    # ---------------------------------
+    if any(word in question for word in ["see", "around", "front", "what"]):
+        descriptions = [
+            f"a {o['label']} {o['distance']} on your {o['direction']}"
+            for o in scene
+        ]
+        return "I can see " + ", ".join(descriptions) + "."
 
-        if len(descriptions) == 1:
-            return f"I can see {descriptions[0]}."
-        else:
-            return "I can see " + ", ".join(descriptions) + "."
-
-    # ----------------------------
-    # FALLBACK (CONTROLLED)
-    # ----------------------------
     return "I am unable to answer that based on what I see."
