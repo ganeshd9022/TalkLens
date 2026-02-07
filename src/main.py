@@ -8,18 +8,28 @@ from interface.voice_input import listen_once
 from ai.llm_reasoner import ask_llama
 
 # ---------------------------------
-# Initialize system components
+# PERFORMANCE CONFIG
+# ---------------------------------
+FRAME_SKIP = 5          # YOLO runs every 5 frames
+frame_count = 0
+
+# ---------------------------------
+# INITIALIZE COMPONENTS
 # ---------------------------------
 camera = cv2.VideoCapture(0)
 detector = ObjectDetector()
 memory = SceneMemory()
 
+last_detections = []      # stores last YOLO output
+cached_scene = []         # structured scene for LLaMA
+last_scene_signature = None
+
 print("✅ TalkLens started")
-print("👉 Press SPACE to ask about surroundings")
+print("👉 Press SPACE to ask a question")
 print("👉 Press Q to quit")
 
 # ---------------------------------
-# Main loop
+# MAIN LOOP
 # ---------------------------------
 while True:
     success, frame = camera.read()
@@ -28,30 +38,69 @@ while True:
         break
 
     frame_width = frame.shape[1]
-    detections = detector.detect(frame)
+    frame_count += 1
 
     # ---------------------------------
-    # Build structured scene data
+    # RUN YOLO (ONLY SOMETIMES)
     # ---------------------------------
-    scene = []
+    if frame_count % FRAME_SKIP == 0:
+        last_detections = detector.detect(frame)
 
-    for obj in detections:
-        direction = get_direction(obj["x_center"], frame_width)
-        distance = get_distance(obj["box_width"], frame_width)
+        scene = []
+        scene_signature = []
 
-        scene.append({
-            "label": obj["label"],
-            "direction": direction,
-            "distance": distance
-        })
+        for obj in last_detections:
+            direction = get_direction(obj["x_center"], frame_width)
+            distance = get_distance(obj["box_width"], frame_width)
 
-    # Show camera feed
+            scene.append({
+                "label": obj["label"],
+                "direction": direction,
+                "distance": distance
+            })
+
+            scene_signature.append(
+                f"{obj['label']}-{direction}-{distance}"
+            )
+
+        signature = "|".join(scene_signature)
+
+        if signature != last_scene_signature:
+            cached_scene = scene
+            last_scene_signature = signature
+
+    # ---------------------------------
+    # DRAW BOUNDING BOXES (EVERY FRAME)
+    # ---------------------------------
+    for obj in last_detections:
+        x1, y1, x2, y2 = obj["bbox"]
+
+        cv2.rectangle(
+            frame,
+            (x1, y1),
+            (x2, y2),
+            (0, 255, 0),
+            2
+        )
+
+        cv2.putText(
+            frame,
+            obj["label"],
+            (x1, y1 - 10),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (0, 255, 0),
+            2
+        )
+
+    # ---------------------------------
+    # DISPLAY CAMERA FEED
+    # ---------------------------------
     cv2.imshow("TalkLens - Vision Assistance", frame)
-
     key = cv2.waitKey(1) & 0xFF
 
     # ---------------------------------
-    # PUSH-TO-TALK (SPACE BAR)
+    # PUSH-TO-TALK (SPACE)
     # ---------------------------------
     if key == ord(' '):
         speak("Listening")
@@ -60,23 +109,20 @@ while True:
         if question.strip() == "":
             speak("I did not hear a question.")
         else:
-            speak("Let me think.")
-            answer = ask_llama(scene, question)
+            answer = ask_llama(cached_scene, question)
 
-            print("🧠 AI Answer:", answer)
-
-            # avoid repeating the same response
             if memory.should_speak(answer):
+                print("🧠 Answer:", answer)
                 speak(answer)
 
     # ---------------------------------
-    # Quit
+    # QUIT
     # ---------------------------------
     if key == ord('q'):
         break
 
 # ---------------------------------
-# Cleanup
+# CLEANUP
 # ---------------------------------
 camera.release()
 cv2.destroyAllWindows()
