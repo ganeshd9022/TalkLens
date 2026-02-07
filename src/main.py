@@ -5,7 +5,9 @@ from spatial.distance_direction import get_direction, get_distance
 from audio.text_to_speech import speak
 from memory.scene_memory import SceneMemory
 from interface.voice_input import listen_once
-from ai.llm_reasoner import ask_llama
+from ai.scene_reasoner import reason_about_scene
+from ai.llm_reasoner import polish_answer
+
 
 # ---------------------------------
 # PERFORMANCE CONFIG
@@ -109,12 +111,14 @@ while True:
         if question.strip() == "":
             speak("I did not hear a question.")
         else:
-            answer = ask_llama(cached_scene, question)
+            fact = reason_about_scene(cached_scene, question)
+            final_answer = polish_answer(fact)
 
-            if memory.should_speak(answer):
-                print("🧠 Answer:", answer)
-                speak(answer)
+            if memory.should_speak(final_answer):
+                print("🧠 Answer:", final_answer)
+                speak(final_answer)
 
+    
     # ---------------------------------
     # QUIT
     # ---------------------------------
