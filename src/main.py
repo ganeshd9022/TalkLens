@@ -1,4 +1,5 @@
 import cv2
+import threading
 
 from detection.object_detection import ObjectDetector
 from spatial.distance_direction import get_direction, get_distance
@@ -126,7 +127,21 @@ while True:
                 speak(answer)
                 last_answer_time = current_time
 
-    
+    def handle_voice_interaction(scene):
+        speak("Listening")
+        question = listen_once()
+
+        if question.strip() == "":
+            speak("I did not hear a question.")
+            return
+
+        fact = reason_about_scene(scene, question)
+        answer = polish_answer(fact)
+
+        if memory.should_speak(answer):
+            print("🧠 Answer:", answer)
+            speak(answer)
+
     # ---------------------------------
     # QUIT
     # ---------------------------------
