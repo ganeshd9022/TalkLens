@@ -1,4 +1,8 @@
 ultralytics
 opencv-python
 numpy
+pyttsx3
+mediapipe
+openai-whisper
+sounddevice
 pyyaml
