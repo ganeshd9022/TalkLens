@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+
+# Virtual environment
+venv/
+.env/
+
+# Model weights
+*.pt
+*.onnx
+*.engine
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Experiment logs
+experiments/logs/
