@@ -1,4 +1,5 @@
 import cv2
+import time
 
 from talklens.config import VisionConfig
 from talklens.vision.camera import Camera
@@ -19,12 +20,43 @@ class VisionEngine:
         )
 
     def run(self):
+        prev_time = 0
+
         try:
             while True:
                 frame = self.camera.read()
                 detections = self.detector.detect(frame)
 
-                print("Detected:", detections)
+                for det in detections:
+                    x1, y1, x2, y2 = det["bbox"]
+                    label = det["label"]
+                    conf = det["confidence"]
+
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.putText(
+                        frame,
+                        f"{label} {conf:.2f}",
+                        (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (0, 255, 0),
+                        2,
+                    )
+
+                # FPS Calculation
+                current_time = time.time()
+                fps = 1 / (current_time - prev_time) if prev_time else 0
+                prev_time = current_time
+
+                cv2.putText(
+                    frame,
+                    f"FPS: {int(fps)}",
+                    (10, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.8,
+                    (255, 0, 0),
+                    2,
+                )
 
                 cv2.imshow("TalkLens Vision", frame)
 

@@ -21,6 +21,12 @@ class ObjectDetector:
 
             cls_id = int(box.cls)
             label = self.model.names[cls_id]
-            detections.append(label)
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+
+            detections.append({
+                "label": label,
+                "confidence": confidence,
+                "bbox": (x1, y1, x2, y2)
+            })
 
         return detections
